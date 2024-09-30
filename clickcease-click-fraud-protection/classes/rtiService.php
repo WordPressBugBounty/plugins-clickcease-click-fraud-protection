@@ -22,9 +22,6 @@ class RTI_Service
 {
     public function is_monitoring_with_botzapping($api_key, $tag_hash, $secret)
     {
-        if (!check_ajax_referer('cc_ajax_nonce', 'security')) {
-            return $this->send_error([], 'Invalid nonce');
-        }
         $params = array('tagHash' => $tag_hash, 'apiKey' => $api_key, 'secretKey' => $secret, 'newVersion' => true);
         $url = Urls::BOTZAPPING . '/plugin/monitoring';
         $request =  [
@@ -59,9 +56,6 @@ class RTI_Service
 
     public function auth_with_botzapping($api_key, $tag_hash, $secret, $action_name)
     {
-        if(!wp_verify_nonce($_POST['nonce'], $action_name)){
-            return $this->send_error([], 'Invalid nonce');
-        }
         $data = new stdClass();
         $data->tagHash = $tag_hash;
         $data->apiKey = $api_key;
