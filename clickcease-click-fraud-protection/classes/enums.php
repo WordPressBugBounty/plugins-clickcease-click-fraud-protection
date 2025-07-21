@@ -55,7 +55,7 @@ abstract class Urls
   const RTI_SERVER_EUROPE = 'https://rti-eu-west-1.cheqzone.com/v1/realtime-interception';
   const RTI_LOGGER = 'https://rtilogger.production.cheq-platform.com/';
   const BOTZAPPING = 'https://botzapping.eu.cheq-platform.com';
-  const CHEQ_TAG = 'obseu.bzcclandlord.com';
+  const CHEQ_TAG = 'obseu.bmccfortress.com';
   const CLICKCEASE = 'https://www.clickcease.com';
   const CLICKCEASE_MONITORING = 'https://monitor.clickcease.com/stats';
   const CLICKCEASE_BOTZAPPING = 'https://api.clickcease.com/dashboard/api/BotZappingDomain';
