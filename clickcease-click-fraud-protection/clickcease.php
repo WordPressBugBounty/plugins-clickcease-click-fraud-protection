@@ -2,7 +2,7 @@
 /*
  * Plugin Name: Clickcease - Click Fraud Protection
  * Description: Plugin adds the ClickCease click fraud protection code.
- * Version: 3.2.14
+ * Version: 3.2.15
  * Requires at least: 5.6
  * Requires PHP: 5.6
  * Author: ClickCease
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     die();
 }
 
-define('clickcease_plugin_VERSION', '3.2.14');
+define('clickcease_plugin_VERSION', '3.2.15');
 define('clickcease_plugin_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('clickcease_plugin_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -331,7 +331,7 @@ class WP_clickcease_plugin
                 update_option('cc_active_domain_value', $temp_domain);
         }
 
-        return get_option('cc_active_domain_value', Urls::HTTPS . Urls::CHEQ_TAG);
+        return Urls::HTTPS . get_option('cc_active_domain_value', Urls::CHEQ_TAG);
     }
 
     private function update_monitoring_status()

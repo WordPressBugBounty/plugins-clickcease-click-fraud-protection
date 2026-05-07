@@ -4,7 +4,7 @@ Tags: fraud protection, bot protection, website protection, click fraud, clickce
 Requires at least: 5.6
 Tested up to: 6.6.2
 Requires PHP: 5.6
-Stable tag: 3.2.14
+Stable tag: 3.2.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,9 @@ Secure your ad campaigns and website from malicious bots and competitors with Cl
 You will need to sign up for a ClickCease subscription at ClickCease.com. Our free 7 day trial allows you to get started blocking bad traffic.
 
 == Changelog ==
+
+= 3.2.15
+* Minor updates: bug fix.
 
 = 3.2.14
 * Minor updates: tag domain cache fix.
