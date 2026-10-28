@@ -2,9 +2,9 @@
 Contributors: ClickCease 
 Tags: fraud protection, bot protection, website protection, click fraud, clickcease
 Requires at least: 5.6
-Tested up to: 6.6.2
+Tested up to: 7.1
 Requires PHP: 5.6
-Stable tag: 3.2.15
+Stable tag: 3.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,12 @@ ClickCease protects you from invalid traffic by monitoring and protecting your:
 Put a stop to ad and click fraud on your website with our market-leading AI software. Allow yourself to fully focus on growing your business without having online fraud distract you.
 
 You will need an active ClickCease subscription to use this WordPress plugin.
+
+**Lead Shield form validation.** Validate leads from Gravity Forms, WPForms and Contact Form 7. Choose the forms to protect in your ClickCease dashboard; verdicts are added to Gravity Forms and WPForms entries and shown in the dashboard for all three.
+
+== External services ==
+On sites connected to a ClickCease 2.0 account, the plugin sends Gravity Forms, WPForms and Contact Form 7 submissions (email address, phone number, form identifiers and the ClickCease visit identifier) to CHEQ for lead validation, and the list of form names so you can choose which forms to protect. Submissions of unprotected forms are discarded. No form data is sent from other sites.
+Provided by CHEQ, the company behind ClickCease: [Terms of Service](https://www.clickcease.com/tos.html), [Privacy Policy](https://cheq.ai/privacy-policy/).
 
 == Installation ==
 1. Install the plugin from the WordPress Plugin Directory or upload it manually.
@@ -45,6 +51,9 @@ Secure your ad campaigns and website from malicious bots and competitors with Cl
 You will need to sign up for a ClickCease subscription at ClickCease.com. Our free 7 day trial allows you to get started blocking bad traffic.
 
 == Changelog ==
+
+= 3.3.0
+* New: Lead Shield form validation for Gravity Forms, WPForms and Contact Form 7, managed from the ClickCease dashboard.
 
 = 3.2.15
 * Minor updates: bug fix.

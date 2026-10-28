@@ -80,16 +80,25 @@ class WP_Rest_Route
                 if ($validAuth) {
                     update_option('clickcease_api_key', $api_key);
                     update_option('clickcease_secret_key', $secret_key);
+                    (new RTI_Service())->report_cc_core_state(DomainState::BZ_PLUGIN_ACTIVATED);
                     LogService::logErrorCode(ErrorCodes::PLUGIN_INSTALL);
                 }
             } else {
                 $validAuth = !$deactivate;
-                (new RTI_Service())->update_user_status(DomainState::BZ_PLUGIN_DEACTIVATED);
+                (new RTI_Service())->report_plugin_state(DomainState::BZ_PLUGIN_DEACTIVATED);
                 LogService::logErrorCode(ErrorCodes::PLUGIN_REMOVE);
             }
 
             update_option('clickcease_bot_zapping_authenticated', $validAuth);
             update_option('cheq_invalid_secret', !$validAuth);
+
+            if ($validAuth) {
+                SiteClassificationService::classify();
+                FormGuardService::sync_forms();
+            } else {
+                SiteClassificationService::clear_classification();
+            }
+
             echo $res;
         }
 
@@ -152,3 +161,5 @@ class WP_Rest_Route
 new WP_Rest_Route();
 
 require_once clickcease_plugin_PLUGIN_PATH . '/classes/formService.php';
+require_once clickcease_plugin_PLUGIN_PATH . '/classes/siteClassificationService.php';
+require_once clickcease_plugin_PLUGIN_PATH . '/classes/formGuardService.php';

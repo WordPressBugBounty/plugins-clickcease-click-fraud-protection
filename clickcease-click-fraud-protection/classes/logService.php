@@ -47,6 +47,11 @@ class LogService
         LogService::log("Server", "", "", "", "", "", "", "", $errorCode);
     }
 
+    public static function logPluginError($errorCode, $msg = "")
+    {
+        LogService::log("Plugin", "", "", "", "", "", "", "", $errorCode, $msg);
+    }
+
     public static function remote_log($level, $tag_hash, $api_key, $message, $application, $action, $site_url, $errorCode)
     {
         $data = new stdClass();
@@ -62,7 +67,7 @@ class LogService
         $dataStr = json_encode($data);
 
         wp_remote_post(Urls::RTI_LOGGER, [
-            'method' => 'POST',
+            'method' => HTTPMethod::POST,
             'timeout' => 0.5,
             'redirection' => 5,
             'blocking' => false,

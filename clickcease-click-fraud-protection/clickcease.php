@@ -2,7 +2,7 @@
 /*
  * Plugin Name: Clickcease - Click Fraud Protection
  * Description: Plugin adds the ClickCease click fraud protection code.
- * Version: 3.2.15
+ * Version: 3.3.0
  * Requires at least: 5.6
  * Requires PHP: 5.6
  * Author: ClickCease
@@ -13,11 +13,16 @@ if (!defined('ABSPATH')) {
     die();
 }
 
-define('clickcease_plugin_VERSION', '3.2.15');
+define('clickcease_plugin_VERSION', '3.3.0');
 define('clickcease_plugin_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('clickcease_plugin_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+// Form plugins register their own init handlers at the default priority of 10 and load part
+// of their classes lazily, so Form Guard has to run on init, after them.
+const CC_FORM_GUARD_INIT_PRIORITY = 20;
+
 add_action('plugins_loaded', ['WP_clickcease_plugin', 'init']);
+add_action('init', ['FormGuardService', 'init'], CC_FORM_GUARD_INIT_PRIORITY);
 register_activation_hook(__FILE__, ['WP_clickcease_plugin', 'activate_plugin']);
 register_deactivation_hook(__FILE__,  ['WP_clickcease_plugin', 'deactivate_plugin']);
 register_uninstall_hook(__FILE__, ['WP_clickcease_plugin', 'uninstall_plugin']);
@@ -70,19 +75,23 @@ class WP_clickcease_plugin
 
     public static function activate_plugin()
     {
-        (new RTI_Service())->update_user_status(DomainState::PLUGIN_ACTIVATED);
+        (new RTI_Service())->report_plugin_state(DomainState::PLUGIN_ACTIVATED);
         $botzappingAuth = get_option('clickcease_bot_zapping_authenticated', '');
-        if ($botzappingAuth) (new RTI_Service())->update_user_status(DomainState::BZ_PLUGIN_ACTIVATED);
+        if ($botzappingAuth) (new RTI_Service())->report_plugin_state(DomainState::BZ_PLUGIN_ACTIVATED);
+        SiteClassificationService::classify();
+        FormGuardService::sync_forms();
     }
 
     public static function deactivate_plugin()
     {
-        (new RTI_Service())->update_user_status(DomainState::PLUGIN_DEACTIVATED);
+        FormGuardService::unschedule_events();
+        (new RTI_Service())->report_plugin_state(DomainState::PLUGIN_DEACTIVATED);
     }
 
     public static function uninstall_plugin()
     {
-        (new RTI_Service())->update_user_status(DomainState::BZ_PLUGIN_UNINSTALLED);
+        SiteClassificationService::clear_classification();
+        (new RTI_Service())->report_plugin_state(DomainState::BZ_PLUGIN_UNINSTALLED);
     }
 
     public static function init()
@@ -289,9 +298,9 @@ class WP_clickcease_plugin
         $screen = get_current_screen();
         //no need to inject admin page to any admin pages only to our page
         if (strpos($screen->id, CC_PLUGIN_PAGE) !== false) {
-            wp_enqueue_script('wp-cc', clickcease_plugin_PLUGIN_URL . '/build/static/js/main.9bcf1f93.js', ['jquery', 'wp-element'], wp_rand(), true);
+            wp_enqueue_script('wp-cc', clickcease_plugin_PLUGIN_URL . '/build/static/js/main.abb237be.js', ['jquery', 'wp-element'], wp_rand(), true);
 
-            wp_enqueue_style('clickcease-setting-style', plugins_url('/build/static/css/main.72f98d40.css', __FILE__), [], clickcease_plugin_VERSION);
+            wp_enqueue_style('clickcease-setting-style', plugins_url('/build/static/css/main.fee78881.css', __FILE__), [], clickcease_plugin_VERSION);
 
             wp_localize_script('wp-cc', 'ajax_obj', [
                 'save_settings_nonce' => wp_create_nonce('save_settings'),
@@ -352,11 +361,12 @@ class WP_clickcease_plugin
         if ($send) {
             $botzappingAuth = get_option('clickcease_bot_zapping_authenticated', '');
             $client_id = get_option('clickcease_client_id', '');
+            $rtiService = new RTI_Service();
             if ($botzappingAuth && $client_id !== '') {
-                $rtiService = new RTI_Service();
                 $clickcease_api_key = get_option('clickcease_api_key', '');
                 $rtiService->update_bz_domain($clickcease_api_key, $client_id, $plugin_latests_version);
             }
+            if ($botzappingAuth) $rtiService->report_cc_core_plugin_status($plugin_latests_version);
         }
     }
 
@@ -433,4 +443,5 @@ require_once clickcease_plugin_PLUGIN_PATH . 'classes/rtiService.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/routes.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/formService.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/logService.php';
+require_once clickcease_plugin_PLUGIN_PATH . 'classes/formGuardService.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/enums.php';

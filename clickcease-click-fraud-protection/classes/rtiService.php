@@ -12,7 +12,7 @@ const BLOCKED_CODES = [
     CCGTMS_BlockedCodes::MALICIOUS_BOTS,
     CCGTMS_BlockedCodes::MALICIOUS_USER_INPUT,
     CCGTMS_BlockedCodes::NETWORK_ANOMALIES,
-    CCGTMS_BlockedCodes::SCRAPERS
+    CCGTMS_BlockedCodes::SCRAPERS,
 ];
 
 const CC_BZ_URL = 'https://botzapping.eu.cheq-platform.com/authorize/plugin';
@@ -22,17 +22,17 @@ class RTI_Service
 {
     public function is_monitoring_with_botzapping($api_key, $tag_hash, $secret)
     {
-        $params = array('tagHash' => $tag_hash, 'apiKey' => $api_key, 'secretKey' => $secret, 'newVersion' => true);
+        $params = ['tagHash' => $tag_hash, 'apiKey' => $api_key, 'secretKey' => $secret, 'newVersion' => true];
         $url = Urls::BOTZAPPING . '/plugin/monitoring';
-        $request =  [
-            'method' => 'GET',
+        $request = [
+            'method' => HTTPMethod::GET,
             'timeout' => 10,
             'redirection' => 5,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Origin' => "plugin",
                 'Authorization' => $api_key,
-            ]
+            ],
         ];
         $apiResponse = wp_remote_get($url . "?" . http_build_query($params), $request);
 
@@ -47,7 +47,7 @@ class RTI_Service
 
         if ($response_body && $response_code == "200") {
             $isMonitoring = json_decode($response_body)->isMonitoring;
-        } else if (!is_wp_error($apiResponse)) {
+        } elseif (!is_wp_error($apiResponse)) {
             $this->send_error($request, $response_body);
         }
 
@@ -63,8 +63,8 @@ class RTI_Service
         $data->newVersion = true;
         $dataStr = json_encode($data);
 
-        $request =  [
-            'method' => 'POST',
+        $request = [
+            'method' => HTTPMethod::POST,
             'timeout' => 10,
             'redirection' => 5,
             'headers' => [
@@ -114,13 +114,12 @@ class RTI_Service
                 $response_body = wp_remote_retrieve_body($apiResponse);
                 if ($response_code !== HTTPCode::SUCCESS && !is_wp_error($apiResponse)) {
                     $this->send_error($request, $response_body);
-                } else if ($response_code == HTTPCode::SUCCESS) {
+                } elseif ($response_code == HTTPCode::SUCCESS) {
                     $res = $this->validate_rti_response($apiResponse, $request);
                 }
             }
-        } catch (Exception $e) { {
-                LogService::log("Plugin", "", "", "", "", "", "", "", ErrorCodes::ERROR, $e->getMessage());
-            }
+        } catch (Exception $e) {
+            LogService::log("Plugin", "", "", "", "", "", "", "", ErrorCodes::ERROR, $e->getMessage());
         }
 
         return $res;
@@ -263,7 +262,7 @@ class RTI_Service
         $data->ClientId = $client_id;
         $dataStr = json_encode($data);
 
-        $request =  $this->get_clickcease_request($api_key, $dataStr);
+        $request = $this->get_clickcease_request($api_key, $dataStr);
         // add route
         $apiResponse = wp_remote_post(Urls::CLICKCEASE_BOTZAPPING . '/State', $request);
         $response_code = $this->get_response_code($request, $apiResponse);
@@ -279,7 +278,7 @@ class RTI_Service
         $data->ClientId = $client_id;
         $dataStr = json_encode($data);
 
-        $request =  $this->get_clickcease_request($api_key, $dataStr);
+        $request = $this->get_clickcease_request($api_key, $dataStr);
 
         // add route
         $apiResponse = wp_remote_post(Urls::CLICKCEASE_BOTZAPPING . '/update', $request);
@@ -288,7 +287,7 @@ class RTI_Service
         return $response_code == HTTPCode::SUCCESS;
     }
 
-    public  function update_user_status($state)
+    public function update_user_status($state)
     {
         $clickcease_api_key = get_option('clickcease_api_key', '');
         $client_id = get_option('clickcease_client_id', '');
@@ -297,11 +296,48 @@ class RTI_Service
         }
     }
 
+    /**
+     * Reports to both backends: CC1 for ClickCease accounts, cc-core for CC2 ones. Each skips
+     * or ignores a site it does not know, so the caller need not tell them apart.
+     */
+    public function report_plugin_state($state)
+    {
+        $this->update_user_status($state);
+        $this->report_cc_core_state($state);
+    }
+
+    /**
+     * Logs and carries on: this runs inside activation, deactivation, uninstall and settings save.
+     */
+    public function report_cc_core_state($state)
+    {
+        if (!CCCoreClient::has_stored_credentials()) {
+            return;
+        }
+
+        $response = CCCoreClient::report_state($state);
+
+        if (CCCoreResponse::is_success($response) || CCCoreResponse::is_domain_not_found($response)) {
+            return;
+        }
+
+        LogService::logPluginError(ErrorCodes::CC_CORE_STATE_REPORT_FAILED, 'state ' . $state . ': ' . CCCoreResponse::describe($response));
+    }
+
+    public function report_cc_core_plugin_status($is_latest_version)
+    {
+        if (!CCCoreClient::has_stored_credentials()) {
+            return;
+        }
+
+        CCCoreClient::report_plugin_status($is_latest_version);
+    }
+
     public function get_active_domain($api_key)
     {
         $res = "";
-        $request =  [
-            'method' => 'GET',
+        $request = [
+            'method' => HTTPMethod::GET,
             'timeout' => 10,
             'redirection' => 5,
             'headers' => [
@@ -329,8 +365,8 @@ class RTI_Service
 
     private function get_clickcease_request($api_key, $dataStr)
     {
-        $request =  [
-            'method' => 'POST',
+        $request = [
+            'method' => HTTPMethod::POST,
             'timeout' => 10,
             'redirection' => 5,
             'headers' => [
@@ -363,8 +399,9 @@ class RTI_Service
 
     private function send_error($request_params, $error)
     {
-        if (is_array($error))
+        if (is_array($error)) {
             $error = json_encode($error);
+        }
         $request = json_encode($request_params);
         $msg = "{\"Request\":{$request} , \"Error\":\"{$error}\"}";
         LogService::log("Plugin", "", "", "", "", "", "", "", ErrorCodes::ERROR, $msg);
@@ -372,7 +409,6 @@ class RTI_Service
 
     private function create_rti_request($api_key, $request_url, $event_type, $tag_hash)
     {
-
         $domain = Utils::get_host();
         $client_ip = Utils::get_the_user_ip();
 
@@ -381,7 +417,7 @@ class RTI_Service
             'ClientIP' => $client_ip,
             'RequestURL' => $request_url,
             'ResourceType' => 'text/html',
-            'Method' => 'GET',
+            'Method' => HTTPMethod::GET,
             'Host' => strtok($domain, '/'),
             'UserAgent' => Utils::getServerVariable('HTTP_USER_AGENT'),
             'Accept' => Utils::getServerVariable('HTTP_ACCEPT'),
@@ -394,13 +430,13 @@ class RTI_Service
 
         if ($event_type == 'page_load') {
             $request_params['HeaderNames'] = 'Host,User-Agent,Accept,Accept-Langauge,Accept-Encoding,Cookie';
-            $request_params['CheqCookie'] = Utils::getCookieVariable('_cheq_rti_en');
+            $request_params['CheqCookie'] = Utils::getCookieVariable(Cookies::CHEQ_RTI);
             $request_params['Referer'] = Utils::getServerVariable('HTTP_REFERER');
             $request_params['Connection'] = Utils::getServerVariable('HTTP_CONNECTION');
         }
 
-        $request =  [
-            'method' => 'POST',
+        $request = [
+            'method' => HTTPMethod::POST,
             'timeout' => 2,
             'redirection' => 10,
             'httpversion' => '1.1',
@@ -413,5 +449,7 @@ class RTI_Service
 
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/logService.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/formService.php';
+require_once clickcease_plugin_PLUGIN_PATH . 'classes/ccCoreClient.php';
+require_once clickcease_plugin_PLUGIN_PATH . 'classes/ccCoreResponse.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/utils.php';
 require_once clickcease_plugin_PLUGIN_PATH . 'classes/enums.php';
